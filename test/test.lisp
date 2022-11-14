@@ -1,32 +1,21 @@
-(pushnew (uiop:getcwd) asdf:*central-registry*)
-(pushnew #P"/root/git/nacl/" asdf:*central-registry*)
+;; (pushnew (uiop:getcwd) asdf:*central-registry*)
+;; (pushnew #P"/root/git/nacl/" asdf:*central-registry*)
 (ql:quickload "nacl")
 
-(defclass tensor ()
- ((shape
-   :initarg :shape
-   :accessor shape)
-  (value
-   :initarg :value
-   :accessor value)
-  (grad
-   :initarg :grad
-   :accessor grad)))
+(let* ((a (nacl:t/new 2))
+       (b (nacl:t/new 5))
+       (c (nacl:t/new 3))
+       (d (nacl:t/expt (nacl:t/+ a b) c)))
+  (map 'list (lambda (x) (print (nacl:t/data x))) (nacl:t/bw d (list a b c))))
 
-(defun t/ones (shape)
- (make-instance
-  'tensor
-  :value (numcl:ones shape)
-  :shape shape
-  :grad (numcl:zeros shape)))
+(let* ((a (nacl:t/new 10))
+       (a³ (nacl:t/expt a (nacl:t/new 3)))
+       (da (car (nacl:t/bw a³ (list a))))
+       (d²a (car (nacl:t/bw da (list a))))
+       (d³a (car (nacl:t/bw d²a (list a))))
+       (d⁴a (car (nacl:t/bw d³a (list a)))))
+  (list (nacl:t/data da)
+        (nacl:t/data d²a)
+        (nacl:t/data d³a)
+        (nacl:t/data d⁴a)))
 
-(value (t/ones '(3 3)))
-(shape (t/ones '(3 3)))
-(grad (t/ones '(3 3)))
-
-(nacl:add 1 2)
-
-(nacl:sub 1 2)
-(nacl:t/ones)
-(nacl:t/zeros)
- 

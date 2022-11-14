@@ -1,4 +1,4 @@
-;;;; NaCL.asd
+ ;;; nacl.asd
 
 (asdf:defsystem #:nacl
   :description "Describe NaCL here"
@@ -6,9 +6,10 @@
   :license  "Specify license here"
   :version "0.0.1"
   :serial t
-  :depends-on (#:numcl)
+  ;; :depends-on (#:numcl)
   :components ((:module "src"
                 :serial t
                 :components ((:file "package")
                              (:file "nacl")
-                             (:file "tensor")))))
+                             (:file "tensor")
+                             (:file "grad")))))
