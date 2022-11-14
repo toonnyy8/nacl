@@ -1,5 +1,3 @@
-;; (pushnew (uiop:getcwd) asdf:*central-registry*)
-;; (pushnew #P"/root/git/nacl/" asdf:*central-registry*)
 (ql:quickload "nacl")
 
 (let* ((a (nacl:t/new 2))
