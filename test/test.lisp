@@ -17,3 +17,12 @@
         (nacl:t/data d³a)
         (nacl:t/data d⁴a)))
 
+(let* ((a (nacl:t/new 10))
+       (-a (nacl:t/- a))
+       (da (car (nacl:t/bw a (list a))))
+       (d-a (car (nacl:t/bw -a (list a)))))
+  (list (nacl:t/data a)
+        (nacl:t/data -a)
+        (nacl:t/data da)
+        (nacl:t/data d-a)))
+

@@ -13,7 +13,7 @@
                (funcall (bwfn y) (t/- j))))
 
 (defun t/bw/neg (x j)
-  (funcall (bwfn x) (- j)))
+  (funcall (bwfn x) (t/- j)))
 
 (defun t/bw/* (x y j)
   (concatenate 'list
