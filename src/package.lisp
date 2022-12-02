@@ -2,7 +2,15 @@
 
 (defpackage #:nacl
   (:use #:cl)
-  (:export #:t/new
+  (:import-from :numcl)
+  (:export #:t/full
+           #:t/full-like
+           #:t/randn
+           #:t/randn-like
+           #:t/ones
+           #:t/ones-like
+           #:t/zeros
+           #:t/zeros-like
            #:t/data
            #:t/tid
            #:t/bwfn

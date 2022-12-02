@@ -1,5 +1,7 @@
 ;;;; tensor.lisp
 
+(ql:quickload :numcl)
+
 (in-package nacl)
 
 (let ((tid 0))
@@ -24,15 +26,72 @@
   (v nil :type tensor)
   (g nil :type tensor))
 
-(defun t/new (data)
+(defun t/ones (shape)
   (let ((tmp (make-instance
               'tensor
-              :data data
+              :data (numcl:ones shape)
               :bwfn nil)))
     (setf (bwfn tmp) (lambda (j) (list (make-var-grad-tuple :v tmp :g j)))) 
     tmp))
 
-(defun t/bw (out inps &optional (j (t/new 1)))
+(defun t/ones-like (array)
+  (let ((tmp (make-instance
+              'tensor
+              :data (numcl:ones-like (data array))
+              :bwfn nil)))
+    (setf (bwfn tmp) (lambda (j) (list (make-var-grad-tuple :v tmp :g j)))) 
+    tmp))
+
+(defun t/zeros (shape)
+  (let ((tmp (make-instance
+              'tensor
+              :data (numcl:zeros shape)
+              :bwfn nil)))
+    (setf (bwfn tmp) (lambda (j) (list (make-var-grad-tuple :v tmp :g j)))) 
+    tmp))
+
+(defun t/zeros-like (array)
+  (let ((tmp (make-instance
+              'tensor
+              :data (numcl:zeros-like (data array))
+              :bwfn nil)))
+    (setf (bwfn tmp) (lambda (j) (list (make-var-grad-tuple :v tmp :g j)))) 
+    tmp))
+
+(defun t/randn (shape &key (mean 0.d0) (std 1.d0))
+  (let ((tmp (make-instance
+              'tensor
+              :data (numcl:normal mean std shape)
+              :bwfn nil)))
+    (setf (bwfn tmp) (lambda (j) (list (make-var-grad-tuple :v tmp :g j)))) 
+    tmp))
+
+(defun t/randn-like (array &key (mean 0.d0) (std 1.d0))
+  (let ((tmp (make-instance
+              'tensor
+              :data (numcl:normal mean std (numcl:shape (data array)))
+              :bwfn nil)))
+    (setf (bwfn tmp) (lambda (j) (list (make-var-grad-tuple :v tmp :g j)))) 
+    tmp))
+
+(defun t/full (shape value)
+  (let ((tmp (make-instance
+              'tensor
+              :data (numcl:full shape value)
+              :bwfn nil)))
+    (setf (bwfn tmp) (lambda (j) (list (make-var-grad-tuple :v tmp :g j)))) 
+    tmp))
+
+(defun t/full-like (array value)
+  (let ((tmp (make-instance
+              'tensor
+              :data (numcl:full-like (data array) value)
+              :bwfn nil)))
+    (setf (bwfn tmp) (lambda (j) (list (make-var-grad-tuple :v tmp :g j)))) 
+    tmp))
+
+(defun t/bw (out inps &optional j)
+  (if (not j) (setq j (t/ones-like out)))
   (let ((gs (funcall (bwfn out) j)))
     (map 'list 
          (lambda (inp) 
@@ -40,12 +99,61 @@
                      (if (eq inp (var-grad-tuple-v vg))
                          (t/+ prev (var-grad-tuple-g vg))
                          prev))
-                   gs :initial-value (t/new 0))) inps)))
+                   gs :initial-value (t/zeros-like inp))) inps)))
+
+;; (defun t/bw (out inps &optional j)
+;;   (if (not j) (setq j (numcl:ones-like out)))
+;;   (let ((gs (funcall (bwfn out) j)))
+;;     (map 'list 
+;;          (lambda (inp) 
+;;            (reduce (lambda (prev vg) 
+;;                      (if (eq inp (var-grad-tuple-v vg))
+;;                          (t/+ prev (var-grad-tuple-g vg))
+;;                          prev
+;;                    gs :initial-value (t/new 0))) inps)
+
+(defun t/matmul (x y)
+  (let ((tmp (make-instance
+              'tensor
+              :data (numcl:matmul (data x) (data y))
+              :bwfn nil)))
+    (setf (bwfn tmp) 
+          (lambda (j)
+            (concatenate 'list
+                         (list (make-var-grad-tuple :v tmp :g j))
+                         (t/bw/matmul x y j)))) 
+    tmp))
+
+
+(defun t/T (x)
+  (let ((tmp (make-instance
+              'tensor
+              :data (numcl:transpose (data x))
+              :bwfn nil)))
+    (setf (bwfn tmp) 
+          (lambda (j)
+            (concatenate 'list
+                         (list (make-var-grad-tuple :v tmp :g j))
+                         (t/bw/T x j)))) 
+    tmp))
+
+
+(defun t/msquare (x)
+  (let ((tmp (make-instance
+              'tensor
+              :data (numcl:square (data x))
+              :bwfn nil)))
+    (setf (bwfn tmp) 
+          (lambda (j)
+            (concatenate 'list
+                         (list (make-var-grad-tuple :v tmp :g j))
+                         (t/bw/msquare x j)))) 
+    tmp))
 
 (defun t/+ (x y)
   (let ((tmp (make-instance
               'tensor
-              :data (+ (data x) (data y))
+              :data (numcl:+ (data x) (data y))
               :bwfn nil)))
     (setf (bwfn tmp) 
           (lambda (j)
@@ -58,7 +166,7 @@
   (if y
       (let ((tmp (make-instance
                   'tensor
-                  :data (- (data x) (data y))
+                  :data (numcl:- (data x) (data y))
                   :bwfn nil)))
         (setf (bwfn tmp) 
               (lambda (j)
@@ -68,7 +176,7 @@
         tmp)
       (let ((tmp (make-instance
                   'tensor
-                  :data (- (data x))
+                  :data (numcl:- (data x))
                   :bwfn nil)))
         (setf (bwfn tmp) 
               (lambda (j)
@@ -80,7 +188,7 @@
 (defun t/* (x y)
   (let ((tmp (make-instance
               'tensor
-              :data (* (data x) (data y))
+              :data (numcl:* (data x) (data y))
               :bwfn nil)))
     (setf (bwfn tmp) 
           (lambda (j)
@@ -92,7 +200,7 @@
 (defun t/div (x y)
   (let ((tmp (make-instance
               'tensor
-              :data (/ (data x) (data y))
+              :data (numcl:/ (data x) (data y))
               :bwfn nil)))
     (setf (bwfn tmp) 
           (lambda (j)
@@ -104,7 +212,7 @@
 (defun t/expt (x y)
   (let ((tmp (make-instance
               'tensor
-              :data (expt (data x) (data y))
+              :data (numcl:expt (data x) (data y))
               :bwfn nil)))
     (setf (bwfn tmp) 
           (lambda (j)
@@ -113,10 +221,15 @@
                          (t/bw/expt x y j))))
     tmp))
 
-(defun t/log (x &optional (y (t/new (exp 1))))
+(defun numcl/log (x &optional y)
+  (if (not y) (setq y (numcl:exp (numcl:ones-like x))))
+  (numcl:/ (numcl:log x) (numcl:log y)))
+
+(defun t/log (x &optional y)
+  (if (not y) (setq y (t/ones-like x)))
   (let ((tmp (make-instance
               'tensor
-              :data (log (data x) (data y))
+              :data (numcl/log (data x) (data y))
               :bwfn nil)))
     (setf (bwfn tmp) 
           (lambda (j)

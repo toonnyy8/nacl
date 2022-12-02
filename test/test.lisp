@@ -1,13 +1,14 @@
 (ql:quickload "nacl")
 
-(let* ((a (nacl:t/new 2))
-       (b (nacl:t/new 5))
-       (c (nacl:t/new 3))
+(let* ((a (nacl:t/full '(1) 2.))
+       (b (nacl:t/full '(1) 5.))
+       (c (nacl:t/full '(1) 3.))
        (d (nacl:t/expt (nacl:t/+ a b) c)))
+  ;;(nacl:t/bw d (list a b c)))
   (map 'list (lambda (x) (print (nacl:t/data x))) (nacl:t/bw d (list a b c))))
 
-(let* ((a (nacl:t/new 10))
-       (a³ (nacl:t/expt a (nacl:t/new 3)))
+(let* ((a (nacl:t/full '(1) 10))
+       (a³ (nacl:t/expt a (nacl:t/full '(1) 3)))
        (da (car (nacl:t/bw a³ (list a))))
        (d²a (car (nacl:t/bw da (list a))))
        (d³a (car (nacl:t/bw d²a (list a))))
@@ -17,7 +18,7 @@
         (nacl:t/data d³a)
         (nacl:t/data d⁴a)))
 
-(let* ((a (nacl:t/new 10))
+(let* ((a (nacl:t/full '(1) 10))
        (-a (nacl:t/- a))
        (da (car (nacl:t/bw a (list a))))
        (d-a (car (nacl:t/bw -a (list a)))))
@@ -25,4 +26,3 @@
         (nacl:t/data -a)
         (nacl:t/data da)
         (nacl:t/data d-a)))
-
