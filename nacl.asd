@@ -12,4 +12,6 @@
                 :components ((:file "package")
                              (:file "nacl")
                              (:file "tensor")
-                             (:file "grad")))))
+                             (:file "grad")
+                             (:file "fn")
+                             (:file "nn")))))

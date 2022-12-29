@@ -1,0 +1,6 @@
+# NaCL
+待完成：
+具有 keepdim 的 sum 與 mean
+nn 中的 linear, custom module
+SGD Optim
+使用 MNIST 分類器或 NeRF 做展示

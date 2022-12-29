@@ -3,7 +3,8 @@
 (defpackage #:nacl
   (:use #:cl)
   (:import-from :numcl)
-  (:export #:t/full
+  (:export #:t/new
+           #:t/full
            #:t/full-like
            #:t/randn
            #:t/randn-like
@@ -20,4 +21,7 @@
            #:t/div
            #:t/expt
            #:t/log
-           #:t/bw))
+           #:t/matmul
+           #:t/reshape
+           #:t/bw
+           #:f/relu))

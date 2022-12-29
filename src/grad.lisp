@@ -42,3 +42,14 @@
   (concatenate 'list
                (funcall (bwfn x) (t/div j (t/* (t/log y) x)))
                (funcall (bwfn y) (t/* j (t/div (t/- (t/log x)) (t/* y (t/* (t/log y) (t/log y))))))))
+
+(defun t/bw/reshape (x j)
+  (funcall (bwfn x) (t/reshape j (numcl:shape (data x)))))
+
+;; todo
+(defun t/bw/sum (x j)
+  (funcall (bwfn x) (t/reshape j (numcl:shape (data x)))))
+;; todo
+(defun t/bw/mean (x j)
+  (funcall (bwfn x) (t/reshape j (numcl:shape (data x)))))
+
