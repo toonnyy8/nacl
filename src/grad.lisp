@@ -46,10 +46,12 @@
 (defun t/bw/reshape (x j)
   (funcall (bwfn x) (t/reshape j (numcl:shape (data x)))))
 
-;; todo
-(defun t/bw/sum (x j)
-  (funcall (bwfn x) (t/reshape j (numcl:shape (data x)))))
-;; todo
-(defun t/bw/mean (x j)
-  (funcall (bwfn x) (t/reshape j (numcl:shape (data x)))))
+(defun t/bw/sum (x keepdim-shape j)
+  (funcall (bwfn x) (t/* (t/ones-like x) (t/reshape j keepdim-shape))))
+
+(defun t/bw/mean (x keepdim-shape j)
+  (let ((scalar (/ (reduce #'* (t/shape j) :initial-value 1)
+                   (reduce #'* (t/shape x) :initial-value 1))))
+    (funcall (bwfn x) (t/* (t/full-like x scalar) 
+                           (t/reshape j keepdim-shape)))))
 

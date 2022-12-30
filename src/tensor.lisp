@@ -22,6 +22,10 @@
 (setf (fdefinition 't/tid) #'tid)
 (setf (fdefinition 't/bwfn) #'bwfn)
 
+(defun t/shape (x)
+  (check-type x tensor)
+  (numcl:shape (t/data x)))
+
 (defmacro make-tensor-prototype (body)
   `(make-instance
     'tensor
@@ -112,7 +116,7 @@
 ;;     tmp))
 
 (defun t/full-like (array value)
-  (t/prototype-op (numcl:full-like (data array) value) (t/init-bw)))
+  (t/prototype-op (numcl:full (numcl:shape (data array)) value) (t/init-bw)))
 ;; (defun t/full-like (array value)
 ;;   (let ((tmp (make-instance
 ;;               'tensor
@@ -186,8 +190,24 @@
                             (list (make-var-grad-tuple :v tmp :g j))
                             ,(concatenate 'list (list bw-op-name) args '(j)))))
 
+(defun t/u/matmul (x y)
+  (let* ((x-shape (numcl:shape x))
+         (y-shape (numcl:shape y))
+         (x-dims (length x-shape))
+         (y-dims (length y-shape))
+         (max-dims (max x-dims y-dims))
+         (x-shape (concatenate 'list 
+                               (loop repeat (- max-dims x-dims) collect 1)
+                               x-shape '(1)))
+         (y-shape (concatenate 'list 
+                               (loop repeat (+ 1 (- max-dims y-dims)) collect 1)
+                               y-shape))
+         (new-x (numcl:reshape x x-shape))
+         (new-y (numcl:reshape y y-shape)))
+    (numcl:sum (numcl:* new-x new-y) :axes (- max-dims 1))))
+
 (defun t/matmul (x y)
-  (t/prototype-op (numcl:matmul (data x) (data y))
+  (t/prototype-op (t/u/matmul (data x) (data y))
                   (t/op-bw t/bw/matmul x y)))
 ;; (defun t/matmul (x y)
 ;;   (tensor-op-body matmul (numcl:matmul (data x) (data y)) x y))
@@ -345,39 +365,38 @@
   (t/prototype-op (numcl:reshape (data x) shape)
                   (t/op-bw t/bw/reshape x)))
 
+(defun t/u/reduce-shape (x axes) 
+  (let ((org-shape (numcl:shape x)))
+    (loop for dim in org-shape
+          for axis from 0 to (length org-shape)
+          collect (if (member axis axes) 1 dim))))
 
 (defun t/u/sum (x &optional (axes nil) &key (keepdim nil))
   (check-type x numcl:array)
   (let ((y (numcl:sum x :axes axes)))
     (if keepdim
-        (let* ((org-shape (numcl:shape x)) 
-               (new-shape (loop for dim in org-shape
-                                for axis from 0 to (length org-shape)
-                                collect (if (member axis axes) 1 dim))))
+        (let ((new-shape (t/u/reduce-shape x axes)))
           (if (numcl:arrayp y)
               (numcl:reshape y new-shape) 
               (numcl:full new-shape y)))
         y)))
-(defun t/sum (x &optional (axes nul) &key (keepdim nil))
+(defun t/sum (x &optional (axes nil) &key (keepdim nil))
   (t/prototype-op (t/u/sum (data x) axes :keepdim keepdim)
-                  (t/op-bw t/bw/sum x)))
+                  (t/op-bw t/bw/sum x (t/u/reduce-shape (data x) axes))))
 
 
 (defun t/u/mean (x &optional (axes nil) &key (keepdim nil))
   (check-type x numcl:array)
   (let ((y (numcl:mean x :axes axes)))
     (if keepdim
-        (let* ((org-shape (numcl:shape x)) 
-               (new-shape (loop for dim in org-shape
-                                for axis from 0 to (length org-shape)
-                                collect (if (member axis axes) 1 dim))))
+        (let ((new-shape (t/u/reduce-shape x axes)))
           (if (numcl:arrayp y)
               (numcl:reshape y new-shape) 
               (numcl:full new-shape y)))
         y)))
-(defun t/mean (x &optional (axes nul) &key (keepdim nil))
+(defun t/mean (x &optional (axes nil) &key (keepdim nil))
   (t/prototype-op (t/u/mean (data x) axes :keepdim keepdim)
-                  (t/op-bw t/bw/mean x)))
+                  (t/op-bw t/bw/mean x (t/u/reduce-shape (data x) axes))))
 
 
 ;; (defmacro def-tensor-op (op-name bw-op-name body &rest args)
