@@ -26,5 +26,11 @@
            #:t/reshape
            #:t/sum
            #:t/mean
+           #:t/cos
+           #:t/sin
+           #:t/stack
+           #:t/unstack
+           #:t/cat
+           #:t/split
            #:t/bw
            #:f/relu))

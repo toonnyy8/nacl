@@ -8,12 +8,20 @@
                     ,(t/randn `(,out-features)))))
         (fwfn (lambda (states x)
                 (t/matmul x (car x)))))
-   `(,params ,fwfn)))
+   (values params fwfn)))
 
 (defun nn/fn (op)
   (let ((params (lambda () nil))
-        (fwfn op)))
-  `(,params ,fwfn))
+        (fwfn (lambda (states &rest args) (apply op args))))
+    (values params fwfn)))
+
+(let ((a) (b))
+  (setf (values a b) (values 4 5)))
+
+(setf (values a b) (values 1 2))
+
+(progn
+ `(:keepdim t ,a ,b))
 ;; (funcall (car (nn/linear 5 5)))
 
 ;; (defun t/u/matmul (x y)

@@ -55,3 +55,43 @@
     (funcall (bwfn x) (t/* (t/full-like x scalar) 
                            (t/reshape j keepdim-shape)))))
 
+(defun t/bw/cos (x j)
+  (funcall (bwfn x) (t/* j (t/- (t/sin x)))))
+
+(defun t/bw/sin (x j)
+  (funcall (bwfn x) (t/* j (t/cos x))))
+
+(defun t/bw/stack (xs axis j)
+  (let ((tmps nil))
+    (loop for x in xs
+          for _j in (t/unstack j axis)
+          do (setf tmps (concatenate 'list tmps
+                                     (funcall (bwfn x) _j))))
+    tmps))
+
+(defun t/bw/unstack (x axis idx pads j)
+  (let* ((n (length pads))
+         (pad-j (loop for i from 0 to (- n 1)
+                      collect (if (= i idx) j (nth i pads)))))
+    (funcall (bwfn x) (t/stack pad-j axis))))
+
+(defun t/bw/cat (xs axis j)
+  (let ((tmps nil)
+        (sections (loop for x in xs 
+                        collect (nth axis (numcl:shape (data x))))))
+    (loop for x in xs
+          for _j in (t/split j sections axis)
+          do (setf tmps (concatenate 'list tmps
+                                     (funcall (bwfn x) _j))))
+    tmps))
+
+;; (defun t/bw/split (x mask j)
+;;   (funcall (bwfn x) (t/* j mask)))
+
+(defun t/bw/split (x axis idx pads j)
+  (let* ((n (length pads))
+         (pad-j (loop for i from 0 to (- n 1)
+                      collect (if (= i idx) j (nth i pads)))))
+    (print (mapcar #'t/data pad-j))
+    (funcall (bwfn x) (t/cat pad-j axis))))
+
