@@ -72,25 +72,43 @@
                             (list (make-var-grad-tuple :v tmp :g j))
                             ,(concatenate 'list (list bw-op-name) args '(j)))))
 
-(defun t/u/matmul (x y)
-  (let* ((x-shape (numcl:shape x))
-         (y-shape (numcl:shape y))
+;; (defun t/u/matmul (x y)
+;;   (let* ((x-shape (numcl:shape x))
+;;          (y-shape (numcl:shape y))
+;;          (x-dims (length x-shape))
+;;          (y-dims (length y-shape))
+;;          (max-dims (max x-dims y-dims))
+;;          (x-shape (concatenate 'list 
+;;                                (loop repeat (- max-dims x-dims) collect 1)
+;;                                x-shape '(1)))
+;;          (y-shape (concatenate 'list 
+;;                                (loop repeat (+ 1 (- max-dims y-dims)) collect 1)
+;;                                y-shape))
+;;          (new-x (numcl:reshape x x-shape))
+;;          (new-y (numcl:reshape y y-shape))
+;;     (numcl:sum (numcl:* new-x new-y) :axes (- max-dims 1))))
+
+(defun t/matmul (x y)
+  (let* ((x-shape (t/shape x))
+         (y-shape (t/shape y))
          (x-dims (length x-shape))
          (y-dims (length y-shape))
          (max-dims (max x-dims y-dims))
-         (x-shape (concatenate 'list 
-                               (loop repeat (- max-dims x-dims) collect 1)
-                               x-shape '(1)))
-         (y-shape (concatenate 'list 
-                               (loop repeat (+ 1 (- max-dims y-dims)) collect 1)
-                               y-shape))
-         (new-x (numcl:reshape x x-shape))
-         (new-y (numcl:reshape y y-shape)))
-    (numcl:sum (numcl:* new-x new-y) :axes (- max-dims 1))))
+         (new-x-shape 
+           (concatenate 'list (loop repeat (- max-dims x-dims) collect 1)
+                        x-shape '(1)))
+         (new-y-shape 
+           (concatenate 'list 
+                        (loop repeat (+ 1 (- max-dims y-dims)) collect 1)
+                        y-shape))
+         (new-x (t/reshape x new-x-shape))
+         (new-y (t/reshape y new-y-shape)))
+    (t/sum (t/* new-x new-y) `(,(- max-dims 1)))))
 
-(defun t/matmul (x y)
-  (t/prototype-op (t/u/matmul (data x) (data y))
-                  (t/op-bw t/bw/matmul x y)))
+
+;; (defun t/matmul (x y)
+;;   (t/prototype-op (t/u/matmul (data x) (data y))
+;;                   (t/op-bw t/bw/matmul x y))))
 
 (defun t/T (x)
   (t/prototype-op (numcl:transpose (data x))
@@ -138,28 +156,32 @@
           for axis from 0 to (length org-shape)
           collect (if (member axis axes) 1 dim))))
 
+;; (defun t/u/sum (x &optional (axes nil) &key (keepdim nil))
+;;   (check-type x numcl:array)
+;;   (let ((y (numcl:sum x :axes axes)))
+;;     (if keepdim
+;;         (let ((new-shape (t/u/reduce-shape x axes)))
+;;           (if (numcl:arrayp y)
+;;               (numcl:reshape y new-shape) 
+;;               (numcl:full new-shape y)
+;;         y)))
+
 (defun t/u/sum (x &optional (axes nil) &key (keepdim nil))
   (check-type x numcl:array)
-  (let ((y (numcl:sum x :axes axes)))
-    (if keepdim
-        (let ((new-shape (t/u/reduce-shape x axes)))
-          (if (numcl:arrayp y)
-              (numcl:reshape y new-shape) 
-              (numcl:full new-shape y)))
-        y)))
+  (let* ((y (numcl:sum x :axes axes))
+         (y (if (numcl:arrayp y) y (numcl:asarray `(,y)))))
+    (if keepdim (numcl:reshape y (t/u/reduce-shape x axes)) y)))
+
 (defun t/sum (x &optional (axes nil) &key (keepdim nil))
   (t/prototype-op (t/u/sum (data x) axes :keepdim keepdim)
                   (t/op-bw t/bw/sum x (t/u/reduce-shape (data x) axes))))
 
 (defun t/u/mean (x &optional (axes nil) &key (keepdim nil))
   (check-type x numcl:array)
-  (let ((y (numcl:mean x :axes axes)))
-    (if keepdim
-        (let ((new-shape (t/u/reduce-shape x axes)))
-          (if (numcl:arrayp y)
-              (numcl:reshape y new-shape) 
-              (numcl:full new-shape y)))
-        y)))
+  (let* ((y (numcl:mean x :axes axes))
+         (y (if (numcl:arrayp y) y (numcl:asarray `(,y)))))
+    (if keepdim (numcl:reshape y (t/u/reduce-shape x axes)) y)))
+
 (defun t/mean (x &optional (axes nil) &key (keepdim nil))
   (t/prototype-op (t/u/mean (data x) axes :keepdim keepdim)
                   (t/op-bw t/bw/mean x (t/u/reduce-shape (data x) axes))))

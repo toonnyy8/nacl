@@ -67,15 +67,24 @@
         (nacl:t/data d³a)
         (nacl:t/data d⁴a)))
 
+(let* ((a (nacl:t/new '(1 -2)))
+       (b (nacl:t/new '(3)))
+       (c (nacl:t/- a b)))
+  (print (nacl:t/data c))
+  ;;(nacl:t/bw d (list a b c)))
+  (map 'list (lambda (x) (print (nacl:t/data x))) (nacl:t/bw c (list a b))))
+
 
 (let* ((a (nacl:t/new '((1) (-2))))
        (b (nacl:t/new '((3 4))))
        (c (nacl:t/matmul a b))
        (d (nacl:f/relu c))
-       (d (nacl:t/* d d)))
+       (e (nacl:t/* d d)))
+  (print (nacl:t/data c))
   (print (nacl:t/data d))
+  (print (nacl:t/data e))
   ;;(nacl:t/bw d (list a b c)))
-  (map 'list (lambda (x) (print (nacl:t/data x))) (nacl:t/bw d (list a b))))
+  (map 'list (lambda (x) (print (nacl:t/data x))) (nacl:t/bw e (list a b))))
 
 
 (let* ((a (nacl:t/full '(1) 2.))
