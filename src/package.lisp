@@ -33,4 +33,6 @@
            #:t/cat
            #:t/split
            #:t/bw
-           #:f/relu))
+           #:f/relu
+           #:nn/linear
+           #:nn/fn))
