@@ -64,11 +64,14 @@
                 (funcall (bwfn y) (t/u/inv-broadcast-grad y jy)))))
 
 (defun t/bw/expt (x y j)
-  (let* ((jx (t/* (t/* j y) (t/expt x (t/- y (t/ones-like y)))))
+  (let* ((jx (t/* (t/* j y) (t/expt x (t/- y 1))))
          (jy (t/* (t/* j (t/log x)) (t/expt x y))))
     (concatenate 'list
                 (funcall (bwfn x) (t/u/inv-broadcast-grad x jx))
                 (funcall (bwfn y) (t/u/inv-broadcast-grad y jy)))))
+
+(defun t/bw/exp (x j)
+  (funcall (bwfn x) (t/* j (t/exp x))))
 
 (defun t/bw/log (x y j)
   (let* ((jx (t/div j (t/* (t/log y) x)))

@@ -6,7 +6,8 @@
   :license  "Specify license here"
   :version "0.0.1"
   :serial t
-  :depends-on (#:numcl)
+  :depends-on (#:numcl
+               #:float-features)
   :components ((:module "src"
                 :serial t
                 :components ((:file "package")

@@ -48,6 +48,19 @@
   (map 'list (lambda (x) (print (nacl:t/data x))) (nacl:t/bw l1 `(,a)))
   (map 'list (lambda (x) (print (nacl:t/data x))) (nacl:t/bw l2 `(,a))))
 
+(let ((x (numcl:asarray '(0.1)))
+      (y (numcl:asarray '(2))))
+  (numcl:/(numcl:log x) (numcl:log y)))
+
+(ql:quickload "nacl")
+(let* ((a (nacl:t/randn '(2 3 4)))
+       (b (nacl:t/expt a (nacl:t/full '(1 1 1) 2))))
+       ;; (b (nacl:t/mean b)))
+  (print (nacl:t/data a))
+  ;;(nacl:t/bw d (list a b c)))
+  (map 'list (lambda (x) (print (nacl:t/data x))) (nacl:t/bw b (list a))))
+
+(numcl:mean (numcl:ones ' (2 3 4)) :axes nil)
 
 (let* ((a (nacl:t/ones '(2 3 4)))
        (b (nacl:t/mean a '(0 2) :keepdim t))

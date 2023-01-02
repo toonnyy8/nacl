@@ -21,6 +21,7 @@
            #:t/*
            #:t/div
            #:t/expt
+           #:t/exp
            #:t/log
            #:t/matmul
            #:t/reshape
@@ -33,6 +34,13 @@
            #:t/cat
            #:t/split
            #:t/bw
+           #:t/sg
+           #:t/gcp
            #:f/relu
+           #:f/sigmoid
+           #:f/bce
            #:nn/linear
-           #:nn/fn))
+           #:nn/fn
+           #:nn/seq
+           #:optim/adam
+           #:optim/sgd))

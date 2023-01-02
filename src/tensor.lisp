@@ -44,10 +44,14 @@
   (t/prototype-op (numcl:zeros-like (data array)) (t/init-bw)))
 
 (defun t/randn (shape &key (mean 0.d0) (std 1.d0))
-  (t/prototype-op (numcl:normal mean std shape) (t/init-bw)))
+  (t/prototype-op (numcl:normal (coerce mean 'double-float)
+                                (coerce std 'double-float) shape)
+                  (t/init-bw)))
 
 (defun t/randn-like (array &key (mean 0.d0) (std 1.d0))
-  (t/prototype-op (numcl:normal mean std (numcl:shape (data array)))
+  (t/prototype-op (numcl:normal (coerce mean 'double-float)
+                                (coerce std 'double-float) 
+                                (numcl:shape (data array)))
                   (t/init-bw)))
 
 (defun t/full (shape value)
@@ -61,13 +65,27 @@
   (let ((gs (funcall (bwfn out) j))
         (*inps (nn/u/flatten-states inps)))
     (nn/u/shaping-states inps
-     (mapcar (lambda (inp) 
-               (reduce (lambda (prev vg) 
-                         (if (eq inp (var-grad-tuple-v vg))
-                             (t/+ prev (var-grad-tuple-g vg))
-                             prev))
-                       gs :initial-value (t/zeros-like inp)))
-             *inps))))
+      (mapcar (lambda (inp) 
+                (reduce (lambda (prev vg)
+                          (if (eq inp (var-grad-tuple-v vg))
+                              (t/+ prev (var-grad-tuple-g vg))
+                              prev))
+                        gs :initial-value (t/zeros-like inp)))
+              *inps))))
+
+(defun t/sg (xs)
+  (let ((*xs (nn/u/flatten-states xs)))
+    (nn/u/shaping-states 
+     xs (loop for x in *xs
+              collect (t/new (t/data x))))))
+
+(defun t/gcp (xs)
+  (let ((*xs (nn/u/flatten-states xs)))
+    (nn/u/shaping-states 
+     xs (loop for x in *xs
+              collect (let ((tmp (t/new (t/data x))))
+                        (setf (bwfn tmp) (bwfn x))
+                        tmp)))))
 
 (defmacro t/op-bw (bw-op-name &rest args)
   `(lambda (j) (concatenate 'list 
@@ -145,6 +163,11 @@
     (t/prototype-op (numcl:/ (data x) (data y))
                     (t/op-bw t/bw/div x y))))
 
+(defun t/exp (x)
+  (let ((x (if (numberp x) (t/new `(,x)) x)))
+    (t/prototype-op (numcl:exp (data x))
+                    (t/op-bw t/bw/exp x))))
+
 (defun t/expt (x y)
   (let ((x (if (numberp x) (t/new `(,x)) x))
         (y (if (numberp y) (t/new `(,y)) y)))
@@ -154,11 +177,10 @@
 (defun t/u/log (x &optional y)
   (numcl:/ (numcl:log x) (numcl:log y)))
 
-
 (defun t/log (x &optional y)
   (let ((x (if (numberp x) (t/new `(,x)) x))
         (y (if (numberp y) (t/new `(,y))
-               (if (not y) (t/new `(,(exp 1))) y))))
+               (if (not y) (t/new `(,(coerce (exp 1) 'double-float))) y))))
     (t/prototype-op (t/u/log (data x) (data y))
                     (t/op-bw t/bw/log x y))))
 
@@ -166,11 +188,19 @@
   (t/prototype-op (numcl:reshape (data x) shape)
                   (t/op-bw t/bw/reshape x)))
 
+;; (defun t/u/reduce-shape (x axes) 
+;;   (let ((org-shape (numcl:shape x)))
+;;     (loop for dim in org-shape
+;;           for axis from 0 to (length org-shape)
+;;           collect (if (member axis axes) 1 dim)))
+
 (defun t/u/reduce-shape (x axes) 
   (let ((org-shape (numcl:shape x)))
-    (loop for dim in org-shape
-          for axis from 0 to (length org-shape)
-          collect (if (member axis axes) 1 dim))))
+    (if axes
+        (loop for dim in org-shape
+              for axis from 0 to (- (length org-shape) 1)
+              collect (if (member axis axes) 1 dim))
+        (loop for dim in org-shape collect 1))))
 
 ;; (defun t/u/sum (x &optional (axes nil) &key (keepdim nil))
 ;;   (check-type x numcl:array)
@@ -185,7 +215,10 @@
 (defun t/u/sum (x &optional (axes nil) &key (keepdim nil))
   (check-type x numcl:array)
   (let* ((y (numcl:sum x :axes axes))
-         (y (if (numcl:arrayp y) y (numcl:asarray `(,y)))))
+         (y (if (numcl:arrayp y) y 
+                (if (float-features:float-nan-p y)
+                    (numcl:asarray `(,0))
+                    (numcl:asarray `(,y))))))
     (if keepdim (numcl:reshape y (t/u/reduce-shape x axes)) y)))
 
 (defun t/sum (x &optional (axes nil) &key (keepdim nil))
@@ -195,7 +228,10 @@
 (defun t/u/mean (x &optional (axes nil) &key (keepdim nil))
   (check-type x numcl:array)
   (let* ((y (numcl:mean x :axes axes))
-         (y (if (numcl:arrayp y) y (numcl:asarray `(,y)))))
+         (y (if (numcl:arrayp y) y 
+                (if (float-features:float-nan-p y)
+                    (numcl:asarray `(,0))
+                    (numcl:asarray `(,y))))))
     (if keepdim (numcl:reshape y (t/u/reduce-shape x axes)) y)))
 
 (defun t/mean (x &optional (axes nil) &key (keepdim nil))
