@@ -54,6 +54,14 @@
                                 (numcl:shape (data array)))
                   (t/init-bw)))
 
+(defun t/rand (shape &key (low 0.d0) (high 1.d0))
+  (t/prototype-op (numcl:uniform low high shape)
+                  (t/init-bw)))
+
+(defun t/rand-like (array &key (low 0.d0) (high 1.d0))
+  (t/prototype-op (numcl:uniform low high (numcl:shape (data array)))
+                  (t/init-bw)))
+
 (defun t/full (shape value)
   (t/prototype-op (numcl:full shape value) (t/init-bw)))
 

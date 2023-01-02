@@ -9,6 +9,8 @@
            #:t/full-like
            #:t/randn
            #:t/randn-like
+           #:t/rand
+           #:t/rand-like
            #:t/ones
            #:t/ones-like
            #:t/zeros
