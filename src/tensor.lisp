@@ -58,14 +58,16 @@
 
 (defun t/bw (out inps &optional j)
   (if (not j) (setq j (t/ones-like out)))
-  (let ((gs (funcall (bwfn out) j)))
-    (map 'list 
-         (lambda (inp) 
-           (reduce (lambda (prev vg) 
-                     (if (eq inp (var-grad-tuple-v vg))
-                         (t/+ prev (var-grad-tuple-g vg))
-                         prev))
-                   gs :initial-value (t/zeros-like inp))) inps)))
+  (let ((gs (funcall (bwfn out) j))
+        (*inps (nn/u/flatten-states inps)))
+    (nn/u/shaping-states inps
+     (mapcar (lambda (inp) 
+               (reduce (lambda (prev vg) 
+                         (if (eq inp (var-grad-tuple-v vg))
+                             (t/+ prev (var-grad-tuple-g vg))
+                             prev))
+                       gs :initial-value (t/zeros-like inp)))
+             *inps))))
 
 (defmacro t/op-bw (bw-op-name &rest args)
   `(lambda (j) (concatenate 'list 
@@ -115,36 +117,50 @@
                   (t/op-bw t/bw/T x)))
 
 (defun t/+ (x y)
-  (t/prototype-op (numcl:+ (data x) (data y))
-                  (t/op-bw t/bw/+ x y)))
+  (let ((x (if (numberp x) (t/new `(,x)) x))
+        (y (if (numberp y) (t/new `(,y)) y)))
+    (t/prototype-op (numcl:+ (data x) (data y))
+                    (t/op-bw t/bw/+ x y))))
+
+(numberp nil)
 
 (defun t/- (x &optional y)
-  (if y
-      (t/prototype-op (numcl:- (data x) (data y))
-                  (t/op-bw t/bw/- x y))
-      (t/prototype-op (numcl:- (data x))
-                  (t/op-bw t/bw/neg x))))
+  (let ((x (if (numberp x) (t/new `(,x)) x))
+        (y (if (numberp y) (t/new `(,y)) y)))
+    (if y
+         (t/prototype-op (numcl:- (data x) (data y))
+                     (t/op-bw t/bw/- x y))
+         (t/prototype-op (numcl:- (data x))
+                     (t/op-bw t/bw/neg x)))))
 
 (defun t/* (x y)
-  (t/prototype-op (numcl:* (data x) (data y))
-                  (t/op-bw t/bw/* x y)))
+  (let ((x (if (numberp x) (t/new `(,x)) x))
+        (y (if (numberp y) (t/new `(,y)) y)))
+    (t/prototype-op (numcl:* (data x) (data y))
+                    (t/op-bw t/bw/* x y))))
 
 (defun t/div (x y)
-  (t/prototype-op (numcl:/ (data x) (data y))
-                  (t/op-bw t/bw/div x y)))
+  (let ((x (if (numberp x) (t/new `(,x)) x))
+        (y (if (numberp y) (t/new `(,y)) y)))
+    (t/prototype-op (numcl:/ (data x) (data y))
+                    (t/op-bw t/bw/div x y))))
 
 (defun t/expt (x y)
-  (t/prototype-op (numcl:expt (data x) (data y))
-                  (t/op-bw t/bw/expt x y)))
+  (let ((x (if (numberp x) (t/new `(,x)) x))
+        (y (if (numberp y) (t/new `(,y)) y)))
+    (t/prototype-op (numcl:expt (data x) (data y))
+                    (t/op-bw t/bw/expt x y))))
 
 (defun t/u/log (x &optional y)
-  (if (not y) (setq y (numcl:exp (numcl:ones-like x))))
   (numcl:/ (numcl:log x) (numcl:log y)))
 
+
 (defun t/log (x &optional y)
-  (if (not y) (setq y (t/ones-like x)))
-  (t/prototype-op (t/u/log (data x) (data y))
-                  (t/op-bw t/bw/log x y)))
+  (let ((x (if (numberp x) (t/new `(,x)) x))
+        (y (if (numberp y) (t/new `(,y))
+               (if (not y) (t/new `(,(exp 1))) y))))
+    (t/prototype-op (t/u/log (data x) (data y))
+                    (t/op-bw t/bw/log x y))))
 
 (defun t/reshape (x shape)
   (t/prototype-op (numcl:reshape (data x) shape)

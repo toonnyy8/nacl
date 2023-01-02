@@ -14,4 +14,5 @@
                              (:file "tensor")
                              (:file "grad")
                              (:file "fn")
-                             (:file "nn")))))
+                             (:file "nn")
+                             (:file "optim")))))

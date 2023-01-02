@@ -108,7 +108,7 @@
   (let* ((n (length pads))
          (pad-j (loop for i from 0 to (- n 1)
                       collect (if (= i idx) j (nth i pads)))))
-    (print (mapcar #'t/data pad-j))
+    ;; (print (mapcar #'t/data pad-j))
     (funcall (bwfn x) (t/stack pad-j axis))))
 
 (defun t/bw/cat (xs axis j)
