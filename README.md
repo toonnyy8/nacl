@@ -2,6 +2,8 @@
 Neural Network Library in Common Lisp  
 https://hackmd.io/@toonnyy8/Emacs-and-Lisp-final-report#/
 
+[github link](https://github.com/toonnyy8/nacl) (not yet public)
+
 ## Examples are in the test folder
 - [X] test/xor.lisp  
   Build a multilayer perceptron to solve the xor classification problem.
