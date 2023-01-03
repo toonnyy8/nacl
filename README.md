@@ -1,9 +1,6 @@
 # NaCL
-### _Your Name <your.name@example.com>_
+## Neural Network Library in Common Lisp
+Nabla Operator $\nabla$ $\times$ Common Lisp
+https://hackmd.io/@toonnyy8/Emacs-and-Lisp-final-report#/
 
-This is a project to do ... something.
-
-## License
-
-Specify license here
 
