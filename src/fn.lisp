@@ -8,7 +8,7 @@
     (t/* x mask)))
 
 (defun f/sigmoid (x)
-  (t/gcp (t/div 1 (t/+ 1 (t/exp x)))))
+  (t/gcp (t/div 1 (t/+ 1 (t/exp (t/- x))))))
 
 (defun f/bce (pred tgt)
   (t/- (t/+ (t/* tgt (t/log pred)) 

@@ -22,13 +22,12 @@
          (stepfn (nth 1 optim)))
     (print (t/shape (funcall fwfn params x)))
     (print params)
-    (loop for i from 1 to 100
+    (loop for i from 1 to 200
           do (let* ((pred (funcall fwfn params x))
-                    ;; (loss (t/mean (t/expt (t/- pred y) 2)))
                     (loss (t/mean (f/bce pred y)))
                     (grads (t/bw loss params))
                     (states-and-params (funcall stepfn states params grads)))
                (setf states (t/sg (nth 0 states-and-params)))
                (setf params (t/sg (nth 1 states-and-params)))
-               (print (t/data loss))))
+               (if (= 0 (mod i 10)) (print (t/data loss)))))
     (print (t/data (funcall fwfn params x)))))
